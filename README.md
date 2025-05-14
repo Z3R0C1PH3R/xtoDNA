@@ -98,10 +98,6 @@ A web-based application for encoding digital data into DNA sequences and decodin
 - **Encryption**: AES-256 in CBC mode with PBKDF2 key derivation
 - **Password Storage**: Only a hash of the password is stored, ensuring security
 
-## License
-
-[MIT License](LICENSE)
-
 ## Acknowledgements
 
 - This project was created as part of the "How to Grow Almost Anything" course
