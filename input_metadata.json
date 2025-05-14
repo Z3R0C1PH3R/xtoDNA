@@ -1,0 +1,14 @@
+{
+  "config": {
+    "use_compression": true,
+    "use_encryption": true,
+    "use_error_correction": true,
+    "ecc_symbols": 20
+  },
+  "original_file_name": "input.txt",
+  "original_size": 33,
+  "processed_size": 16,
+  "encryption_key": "94afc56f",
+  "huffman_info": "gASVxgAAAAAAAAB9lCiMBWNvZGVzlH2UKEtnjAQwMDAwlEtsjAQwMDAxlEthjAUwMDEwMJRLRYwFMDAxMDGUS2iMBTAwMTEwlEs/jAUwMDExMZRLbowEMDEwMJRLcowEMDEwMZRLdYwFMDExMDCUS0iMBTAxMTAxlEtkjAUwMTExMJRLdowFMDExMTGUS3mMBDEwMDCUS3eMBTEwMDEwlEtpjAUxMDAxMZRLZYwDMTAxlEsgjAMxMTCUS2+MAzExMZR1jAdwYWRkaW5nlEsAdS4=",
+  "dna_sequence_length": 150
+}

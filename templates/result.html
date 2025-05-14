@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Results - DNA Storage System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+            background-color: #f8f9fa;
+        }
+        .file-card {
+            transition: transform 0.2s;
+        }
+        .file-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Results</li>
+            </ol>
+        </nav>
+        
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <div class="alert alert-info" role="alert">
+            <ul class="mb-0">
+            {% for message in messages %}
+                <li>{{ message }}</li>
+            {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        {% endwith %}
+        
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h3 class="mb-0">Processing Results</h3>
+            </div>
+            <div class="card-body">
+                <p class="lead">Your files have been processed successfully. You can download the results below.</p>
+                
+                <div class="row mt-4">
+                    {% if file_info.decoded %}
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100 file-card border-success">
+                            <div class="card-header bg-success text-white">
+                                <h5 class="mb-0">Decoded Files</h5>
+                            </div>
+                            <div class="card-body">
+                                <ul class="list-group">
+                                {% for file in file_info.decoded %}
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        {{ file }}
+                                        <a href="{{ url_for('download', process_id=process_id, filename=file) }}" class="btn btn-sm btn-success">Download</a>
+                                    </li>
+                                {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if file_info.dna %}
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100 file-card border-primary">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0">DNA Sequence Files</h5>
+                            </div>
+                            <div class="card-body">
+                                <ul class="list-group">
+                                {% for file in file_info.dna %}
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        {{ file }}
+                                        <a href="{{ url_for('download', process_id=process_id, filename=file) }}" class="btn btn-sm btn-primary">Download</a>
+                                    </li>
+                                {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if file_info.metadata %}
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100 file-card border-warning">
+                            <div class="card-header bg-warning text-dark">
+                                <h5 class="mb-0">Metadata Files</h5>
+                            </div>
+                            <div class="card-body">
+                                <ul class="list-group">
+                                {% for file in file_info.metadata %}
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        {{ file }}
+                                        <a href="{{ url_for('download', process_id=process_id, filename=file) }}" class="btn btn-sm btn-warning">Download</a>
+                                    </li>
+                                {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if file_info.original %}
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100 file-card border-secondary">
+                            <div class="card-header bg-secondary text-white">
+                                <h5 class="mb-0">Original Files</h5>
+                            </div>
+                            <div class="card-body">
+                                <ul class="list-group">
+                                {% for file in file_info.original %}
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        {{ file }}
+                                        <a href="{{ url_for('download', process_id=process_id, filename=file) }}" class="btn btn-sm btn-secondary">Download</a>
+                                    </li>
+                                {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="alert alert-info mt-3">
+                    <h5>Important!</h5>
+                    <p>Make sure to save the following files to be able to decode your data later:</p>
+                    <ul>
+                        <li>DNA sequence file (.dna)</li>
+                        <li>Metadata file (_metadata.json)</li>
+                    </ul>
+                    {% if 'use_encryption' in file_info and file_info.use_encryption %}
+                    <p class="text-danger"><strong>Don't forget your encryption password!</strong> Without it, your data cannot be recovered.</p>
+                    {% endif %}
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-center mt-4">
+                    <button type="button" class="btn btn-primary me-md-2" onclick="window.location.href='{{ url_for('index') }}'">Return to Home</button>
+                    <button type="button" class="btn btn-danger" id="clean-files">Clear Files</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('clean-files').addEventListener('click', function() {
+            if (confirm('Are you sure you want to delete all files from this process? This cannot be undone.')) {
+                fetch('{{ url_for("clean", process_id=process_id) }}', {
+                    method: 'POST',
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Files have been cleaned up.');
+                        window.location.href = '{{ url_for("index") }}';
+                    } else {
+                        alert('Error cleaning up files.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error cleaning up files.');
+                });
+            }
+        });
+    </script>
+</body>
+</html>

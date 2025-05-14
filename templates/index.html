@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DNA Storage System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+            background-color: #f8f9fa;
+        }
+        .jumbotron {
+            background-color: #e9ecef;
+            padding: 2rem;
+            border-radius: 0.3rem;
+            margin-bottom: 2rem;
+        }
+        .card {
+            margin-bottom: 1.5rem;
+            transition: transform 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .card-img-top {
+            height: 180px;
+            object-fit: cover;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="jumbotron text-center">
+            <h1 class="display-4">DNA Storage System</h1>
+            <p class="lead">Store your digital data in DNA sequences with compression, encryption, and error correction</p>
+            <hr class="my-4">
+            <p>Choose an option below to get started</p>
+        </div>
+        
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <div class="alert alert-info" role="alert">
+            <ul class="mb-0">
+            {% for message in messages %}
+                <li>{{ message }}</li>
+            {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        {% endwith %}
+        
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Encode File to DNA</h5>
+                        <p class="card-text">Convert your file into a DNA sequence with optional compression, encryption, and error correction.</p>
+                        <a href="{{ url_for('encode') }}" class="btn btn-primary">Encode File</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Decode DNA to File</h5>
+                        <p class="card-text">Convert a DNA sequence back to the original file using the associated metadata.</p>
+                        <a href="{{ url_for('decode') }}" class="btn btn-success">Decode File</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Text Processing</h5>
+                        <p class="card-text">Convert text to DNA and back using a simple interface with all options in one place.</p>
+                        <a href="{{ url_for('text') }}" class="btn btn-info">Text Processing</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-5">
+            <h3>How It Works</h3>
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">1. Compression</h5>
+                            <p class="card-text">Files are optionally compressed using Huffman encoding to reduce size.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">2. Encryption</h5>
+                            <p class="card-text">Data can be encrypted for security before converting to DNA.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">3. Error Correction</h5>
+                            <p class="card-text">Reed-Solomon error correction ensures data integrity.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">4. DNA Encoding</h5>
+                            <p class="card-text">Final data is encoded using the four DNA nucleotides: A, T, G, C.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer class="text-center mt-5">
+            <p class="text-muted">DNA Storage System - A project for HTGAA</p>
+        </footer>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

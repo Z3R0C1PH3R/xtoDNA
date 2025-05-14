@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Encode File - DNA Storage System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+            background-color: #f8f9fa;
+        }
+        .form-check-input:checked {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Encode File</li>
+            </ol>
+        </nav>
+        
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0">Encode File to DNA</h3>
+            </div>
+            <div class="card-body">
+                {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                <div class="alert alert-info" role="alert">
+                    <ul class="mb-0">
+                    {% for message in messages %}
+                        <li>{{ message }}</li>
+                    {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+                {% endwith %}
+                
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="file" class="form-label">Select File to Encode</label>
+                        <input type="file" class="form-control" id="file" name="file" required>
+                        <div class="form-text">Supported formats: txt, pdf, png, jpg, jpeg, gif, mp3, mp4, zip</div>
+                    </div>
+                    
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h5 class="mb-0">Encoding Options</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="use_compression" name="use_compression" checked>
+                                <label class="form-check-label" for="use_compression">Use Huffman Compression</label>
+                            </div>
+                            
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="use_encryption" name="use_encryption" checked>
+                                <label class="form-check-label" for="use_encryption">Use Encryption</label>
+                            </div>
+                            
+                            <div class="mb-3" id="encryption_password_container">
+                                <label for="encryption_password" class="form-label">Encryption Password</label>
+                                <input type="password" class="form-control" id="encryption_password" name="encryption_password" placeholder="Enter a secure password">
+                                <div class="form-text text-danger">
+                                    IMPORTANT: Remember this password! Without it, you will NOT be able to decrypt your data.
+                                </div>
+                            </div>
+                            
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="use_error_correction" name="use_error_correction" checked>
+                                <label class="form-check-label" for="use_error_correction">Use Error Correction</label>
+                            </div>
+                            
+                            <div class="mb-3" id="ecc_symbols_container">
+                                <label for="ecc_symbols" class="form-label">Error Correction Symbols</label>
+                                <input type="range" class="form-range" id="ecc_symbols" name="ecc_symbols" min="5" max="50" value="20">
+                                <div class="d-flex justify-content-between">
+                                    <span>5 (Minimum)</span>
+                                    <span id="ecc_value">20</span>
+                                    <span>50 (Maximum)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="button" class="btn btn-secondary me-md-2" onclick="window.location.href='{{ url_for('index') }}'">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Encode File</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Show/hide error correction options based on checkbox
+        document.getElementById('use_error_correction').addEventListener('change', function() {
+            document.getElementById('ecc_symbols_container').style.display = this.checked ? 'block' : 'none';
+        });
+
+        // Show/hide encryption password field based on checkbox
+        document.getElementById('use_encryption').addEventListener('change', function() {
+            document.getElementById('encryption_password_container').style.display = this.checked ? 'block' : 'none';
+        });
+        
+        // Update the displayed value for the range slider
+        document.getElementById('ecc_symbols').addEventListener('input', function() {
+            document.getElementById('ecc_value').textContent = this.value;
+        });
+
+        // Initialize display state on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('ecc_symbols_container').style.display = 
+                document.getElementById('use_error_correction').checked ? 'block' : 'none';
+            document.getElementById('encryption_password_container').style.display = 
+                document.getElementById('use_encryption').checked ? 'block' : 'none';
+        });
+    </script>
+</body>
+</html>

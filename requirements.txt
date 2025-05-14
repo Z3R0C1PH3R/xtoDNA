@@ -1,0 +1,4 @@
+flask==2.3.3
+werkzeug==2.3.7
+reedsolo==1.7.0
+cryptography==41.0.3
