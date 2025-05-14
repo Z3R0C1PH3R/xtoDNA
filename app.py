@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, send_file, jsonify, session
 import os
 from werkzeug.utils import secure_filename
-from test2 import (
+from dna_encoder import (
     initialize_nucleotides, read_file, encrypt_data,
     convert_to_nucleotides, decode_nucleotides, binary_to_bytes,
     decrypt_data, rs_encode, rs_decode, save_metadata, load_metadata,
