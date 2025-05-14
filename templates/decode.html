@@ -42,8 +42,10 @@
             <div class="card-body">
                 {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
-                <div class="alert {% if messages[0][0] == 'error' %}alert-danger{% else %}alert-info{% endif %}" role="alert">
+                <div class="alert {% if messages[0][0] == 'error' %}alert-danger{% elif messages[0][0] == 'data_error' %}alert-warning{% else %}alert-info{% endif %}" role="alert">
                     {% if messages[0][0] == 'error' %}
+                    <i class="bi bi-key-fill me-2"></i>
+                    {% elif messages[0][0] == 'data_error' %}
                     <i class="bi bi-exclamation-triangle-fill me-2"></i>
                     {% else %}
                     <i class="bi bi-info-circle-fill me-2"></i>
@@ -65,8 +67,13 @@
                                 
                                 <div class="mb-3">
                                     <label for="dna_file" class="form-label">DNA Sequence File</label>
-                                    <input type="file" class="form-control" id="dna_file" name="dna_file" required>
+                                    <input type="file" class="form-control {% if get_flashed_messages(category_filter=['data_error']) %}is-invalid{% endif %}" id="dna_file" name="dna_file" required>
                                     <div class="form-text">Upload the .dna file containing the nucleotide sequence</div>
+                                    {% if get_flashed_messages(category_filter=['data_error']) %}
+                                    <div class="invalid-feedback">
+                                        The DNA sequence may be corrupted or improperly formatted.
+                                    </div>
+                                    {% endif %}
                                 </div>
                                 
                                 <div class="mb-3">

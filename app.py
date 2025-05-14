@@ -243,8 +243,14 @@ def decode():
                         
                     # Ensure output is the right length
                     retrieved_data = retrieved_data[:original_encoded_length]
+                except ValueError as e:
+                    if str(e) == "PASSWORD_INCORRECT":
+                        flash('Incorrect password. Please check your password and try again.', 'error')
+                    else:
+                        flash('Decryption failed. The data may be corrupted.', 'data_error')
+                    return redirect(request.url)
                 except Exception as e:
-                    flash('Password is incorrect or the data is corrupted. Please check your password and try again.', 'error')
+                    flash('Decryption failed. The data may be corrupted.', 'data_error')
                     return redirect(request.url)
             
             # Step 3: Decompression (optional) - reverse
@@ -472,13 +478,30 @@ def text():
                             
                         # Ensure output is the right length
                         retrieved_data = retrieved_data[:original_encoded_length]
-                    except Exception as e:
-                        flash('Decryption failed. The password appears to be incorrect.', 'error')
-                        return render_template('text.html', 
+                    except ValueError as e:
+                        if str(e) == "PASSWORD_INCORRECT":
+                            flash('Incorrect password. Please check your password and try again.', 'error')
+                            return render_template('text.html', 
                                           dna_text=dna_sequence, 
                                           metadata_text=metadata_json,
                                           config=config,
                                           password_error=True,
+                                          show_password_info=config['use_encryption'])
+                        else:
+                            flash('Decryption failed. The data may be corrupted.', 'data_error')
+                            return render_template('text.html', 
+                                          dna_text=dna_sequence, 
+                                          metadata_text=metadata_json,
+                                          config=config,
+                                          data_error=True,
+                                          show_password_info=config['use_encryption'])
+                    except Exception as e:
+                        flash('An error occurred during decryption. The data may be corrupted.', 'data_error')
+                        return render_template('text.html', 
+                                          dna_text=dna_sequence, 
+                                          metadata_text=metadata_json,
+                                          config=config,
+                                          data_error=True,
                                           show_password_info=config['use_encryption'])
                 
                 # Step 3: Decompression (optional) - reverse

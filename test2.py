@@ -157,7 +157,8 @@ def decrypt_data_with_password(encrypted_data, password, salt, password_hash, ve
     """Decrypt data using a password and salt."""
     # First verify the password
     if not verify_password(password, password_hash, verification_salt):
-        raise ValueError("Incorrect password. Please check your password and try again.")
+        # Specific error for incorrect password
+        raise ValueError("PASSWORD_INCORRECT")
         
     try:
         # Derive the same key and IV using the password and stored salt
@@ -167,8 +168,8 @@ def decrypt_data_with_password(encrypted_data, password, salt, password_hash, ve
         key_iv_tuple = (key, iv)
         return decrypt_data(encrypted_data, key_iv_tuple, original_length)
     except Exception as e:
-        # Add more specific error for password failures
-        raise ValueError("Decryption failed. The password appears to be incorrect.") from e
+        # Different error for other decryption issues
+        raise ValueError("DECRYPTION_FAILED") from e
 
 def pad_data(data):
     """PKCS#7 padding for AES block size (16 bytes)."""
@@ -418,8 +419,10 @@ def main():
                 # Ensure output is the right length
                 retrieved_data = retrieved_data[:original_encoded_length]
             except ValueError as e:
-                print(f"Decryption failed: {e}")
-                print("This may be due to an incorrect password.")
+                if str(e) == "PASSWORD_INCORRECT":
+                    print("Error: Incorrect password.")
+                elif str(e) == "DECRYPTION_FAILED":
+                    print("Error: Decryption failed due to an unknown issue.")
                 return
             except Exception as e:
                 print(f"Decryption failed: {e}")

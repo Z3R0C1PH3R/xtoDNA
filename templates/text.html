@@ -148,8 +148,13 @@
                         <div class="col-md-6">
                             <div class="text-area-container">
                                 <label for="dna_text" class="text-area-label">DNA Sequence:</label>
-                                <textarea class="form-control" id="dna_text" name="dna_text" placeholder="DNA sequence will appear here...">{{ dna_text|default('') }}</textarea>
+                                <textarea class="form-control {% if data_error %}is-invalid{% endif %}" id="dna_text" name="dna_text" placeholder="DNA sequence will appear here...">{{ dna_text|default('') }}</textarea>
                                 <div class="form-text">The DNA nucleotide sequence representation of your data.</div>
+                                {% if data_error %}
+                                <div class="invalid-feedback" style="display: block;">
+                                    <strong>Invalid or corrupted data.</strong> The DNA sequence may be damaged or improperly formatted.
+                                </div>
+                                {% endif %}
                             </div>
                         </div>
                         <div class="col-md-6">
