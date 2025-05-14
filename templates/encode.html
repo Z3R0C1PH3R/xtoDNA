@@ -15,6 +15,18 @@
             background-color: #0d6efd;
             border-color: #0d6efd;
         }
+        .option-section {
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background-color: #ffffff;
+            border-left: 4px solid #0d6efd;
+            border-radius: 0.25rem;
+            box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+        }
+        .option-section h5 {
+            color: #0d6efd;
+            margin-bottom: 1rem;
+        }
     </style>
 </head>
 <body>
@@ -44,55 +56,69 @@
                 {% endwith %}
                 
                 <form method="POST" enctype="multipart/form-data">
-                    <div class="mb-3">
-                        <label for="file" class="form-label">Select File to Encode</label>
-                        <input type="file" class="form-control" id="file" name="file" required>
-                        <div class="form-text">Supported formats: txt, pdf, png, jpg, jpeg, gif, mp3, mp4, zip</div>
+                    <div class="mb-4">
+                        <h4 class="mb-3">Select File</h4>
+                        <div class="mb-3">
+                            <label for="file" class="form-label">File to Encode</label>
+                            <input type="file" class="form-control" id="file" name="file" required>
+                            <div class="form-text">Max 8mb, Supported formats: txt, pdf, png, jpg, jpeg, gif, mp3, mp4, zip</div>
+                        </div>
                     </div>
                     
-                    <div class="card mb-3">
-                        <div class="card-header">
-                            <h5 class="mb-0">Encoding Options</h5>
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h4 class="mb-0">Encoding Options</h4>
                         </div>
                         <div class="card-body">
-                            <div class="form-check form-switch mb-3">
-                                <input class="form-check-input" type="checkbox" id="use_compression" name="use_compression" checked>
-                                <label class="form-check-label" for="use_compression">Use Huffman Compression</label>
+                            <div class="option-section">
+                                <h5>Compression</h5>
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="use_compression" name="use_compression" checked>
+                                    <label class="form-check-label" for="use_compression">Use Huffman Compression</label>
+                                </div>
+                                <p class="form-text">Helps reduce the size of text files. Not recommended for already compressed files like images or videos.</p>
                             </div>
                             
-                            <div class="form-check form-switch mb-3">
-                                <input class="form-check-input" type="checkbox" id="use_encryption" name="use_encryption" checked>
-                                <label class="form-check-label" for="use_encryption">Use Encryption</label>
-                            </div>
-                            
-                            <div class="mb-3" id="encryption_password_container">
-                                <label for="encryption_password" class="form-label">Encryption Password</label>
-                                <input type="password" class="form-control" id="encryption_password" name="encryption_password" placeholder="Enter a secure password">
-                                <div class="form-text text-danger">
-                                    IMPORTANT: Remember this password! Without it, you will NOT be able to decrypt your data.
+                            <div class="option-section">
+                                <h5>Encryption</h5>
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="use_encryption" name="use_encryption" checked>
+                                    <label class="form-check-label" for="use_encryption">Use AES Encryption</label>
+                                </div>
+                                
+                                <div class="mb-3" id="encryption_password_container">
+                                    <label for="encryption_password" class="form-label">Encryption Password</label>
+                                    <input type="password" class="form-control" id="encryption_password" name="encryption_password" placeholder="Enter a secure password">
+                                    <div class="form-text text-danger">
+                                        <strong>IMPORTANT:</strong> Remember this password! Without it, you will NOT be able to decrypt your data.
+                                    </div>
                                 </div>
                             </div>
                             
-                            <div class="form-check form-switch mb-3">
-                                <input class="form-check-input" type="checkbox" id="use_error_correction" name="use_error_correction" checked>
-                                <label class="form-check-label" for="use_error_correction">Use Error Correction</label>
-                            </div>
-                            
-                            <div class="mb-3" id="ecc_symbols_container">
-                                <label for="ecc_symbols" class="form-label">Error Correction Symbols</label>
-                                <input type="range" class="form-range" id="ecc_symbols" name="ecc_symbols" min="5" max="50" value="20">
-                                <div class="d-flex justify-content-between">
-                                    <span>5 (Minimum)</span>
-                                    <span id="ecc_value">20</span>
-                                    <span>50 (Maximum)</span>
+                            <div class="option-section">
+                                <h5>Error Correction</h5>
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="use_error_correction" name="use_error_correction" checked>
+                                    <label class="form-check-label" for="use_error_correction">Use Reed-Solomon Error Correction</label>
+                                </div>
+                                
+                                <div class="mb-3" id="ecc_symbols_container">
+                                    <label for="ecc_symbols" class="form-label">Error Correction Symbols</label>
+                                    <input type="range" class="form-range" id="ecc_symbols" name="ecc_symbols" min="5" max="50" value="20">
+                                    <div class="d-flex justify-content-between">
+                                        <span>5 (Minimum)</span>
+                                        <span id="ecc_value">20</span>
+                                        <span>50 (Maximum)</span>
+                                    </div>
+                                    <div class="form-text">More symbols increase the ability to correct errors, but also increase the DNA length.</div>
                                 </div>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-center">
                         <button type="button" class="btn btn-secondary me-md-2" onclick="window.location.href='{{ url_for('index') }}'">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Encode File</button>
+                        <button type="submit" class="btn btn-primary btn-lg">Encode File to DNA</button>
                     </div>
                 </form>
             </div>

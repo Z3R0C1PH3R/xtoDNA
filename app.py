@@ -2,12 +2,14 @@ from flask import Flask, render_template, request, redirect, url_for, flash, sen
 import os
 from werkzeug.utils import secure_filename
 from test2 import (
-    initialize_nucleotides, read_file, generate_key, encrypt_data,
+    initialize_nucleotides, read_file, encrypt_data,
     convert_to_nucleotides, decode_nucleotides, binary_to_bytes,
     decrypt_data, rs_encode, rs_decode, save_metadata, load_metadata,
     serialize_huffman_info, deserialize_huffman_info, 
-    derive_key_iv_from_password, encrypt_data_with_password, decrypt_data_with_password
+    derive_key_iv_from_password, encrypt_data_with_password, decrypt_data_with_password,
+    verify_password, generate_password_hash
 )
+from huffman import huffman_encode, huffman_decode  # Add direct import from huffman module
 import tempfile
 import shutil
 import json
@@ -17,7 +19,7 @@ import base64
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24)
 app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max upload
+app.config['MAX_CONTENT_LENGTH'] = 40 * 1024 * 1024  # 40MB max upload
 
 # Ensure upload directory exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -85,6 +87,8 @@ def encode():
                 
                 # Step 2: Encryption (optional)
                 encryption_salt = None
+                password_hash = None
+                verification_salt = None
                 if config['use_encryption']:
                     # Get password from form
                     password = request.form.get('encryption_password', '')
@@ -92,7 +96,7 @@ def encode():
                         flash('Encryption password is required when encryption is enabled')
                         return redirect(request.url)
                         
-                    processed_data, encryption_salt = encrypt_data_with_password(processed_data, password)
+                    processed_data, encryption_salt, password_hash, verification_salt = encrypt_data_with_password(processed_data, password)
                 
                 # Step 3: Error correction (optional)
                 if config['use_error_correction']:
@@ -109,6 +113,8 @@ def encode():
                     'original_size': len(data),
                     'processed_size': original_encoded_length,
                     'encryption_salt': base64.b64encode(encryption_salt).decode('utf-8') if encryption_salt else None,
+                    'password_hash': base64.b64encode(password_hash).decode('utf-8') if password_hash else None,
+                    'verification_salt': base64.b64encode(verification_salt).decode('utf-8') if verification_salt else None,
                     'huffman_info': serialize_huffman_info(info),
                     'dna_sequence_length': len(dna_sequence)
                 }
@@ -192,6 +198,15 @@ def decode():
                     return redirect(request.url)
                     
                 encryption_salt = base64.b64decode(metadata['encryption_salt'])
+                
+                # Verify password if hash exists
+                if 'password_hash' in metadata and 'verification_salt' in metadata:
+                    password_hash = base64.b64decode(metadata['password_hash'])
+                    verification_salt = base64.b64decode(metadata['verification_salt'])
+                    
+                    if not verify_password(encryption_password, password_hash, verification_salt):
+                        flash('Incorrect password. Please check your password and try again.', 'error')
+                        return redirect(request.url)
             
             huffman_info = deserialize_huffman_info(metadata['huffman_info'])
             output_file = metadata['original_file_name']
@@ -213,12 +228,23 @@ def decode():
             # Step 2: Decryption (optional) - reverse
             if config['use_encryption']:
                 try:
-                    retrieved_data = decrypt_data_with_password(
-                        retrieved_data, encryption_password, encryption_salt, original_encoded_length)
+                    # Use appropriate decryption method based on whether we have password hash
+                    if 'password_hash' in metadata and 'verification_salt' in metadata:
+                        password_hash = base64.b64decode(metadata['password_hash'])
+                        verification_salt = base64.b64decode(metadata['verification_salt'])
+                        retrieved_data = decrypt_data_with_password(
+                            retrieved_data, encryption_password, encryption_salt, 
+                            password_hash, verification_salt, original_encoded_length)
+                    else:
+                        # For backward compatibility with older files
+                        key, iv, _ = derive_key_iv_from_password(encryption_password, encryption_salt)
+                        key_iv_tuple = (key, iv)
+                        retrieved_data = decrypt_data(retrieved_data, key_iv_tuple, original_encoded_length)
+                        
                     # Ensure output is the right length
                     retrieved_data = retrieved_data[:original_encoded_length]
                 except Exception as e:
-                    flash(f'Decryption failed, possibly due to an incorrect password: {str(e)}')
+                    flash('Password is incorrect or the data is corrupted. Please check your password and try again.', 'error')
                     return redirect(request.url)
             
             # Step 3: Decompression (optional) - reverse
@@ -321,6 +347,8 @@ def text():
                 
                 # Step 2: Encryption (optional)
                 encryption_salt = None
+                password_hash = None
+                verification_salt = None
                 if config['use_encryption']:
                     # Get password from form
                     password = request.form.get('encryption_password', '')
@@ -328,7 +356,7 @@ def text():
                         flash('Encryption password is required when encryption is enabled')
                         return redirect(url_for('text'))
                         
-                    processed_data, encryption_salt = encrypt_data_with_password(processed_data, password)
+                    processed_data, encryption_salt, password_hash, verification_salt = encrypt_data_with_password(processed_data, password)
                 
                 # Step 3: Error correction (optional)
                 if config['use_error_correction']:
@@ -344,6 +372,8 @@ def text():
                     'original_size': len(data),
                     'processed_size': original_encoded_length,
                     'encryption_salt': base64.b64encode(encryption_salt).decode('utf-8') if encryption_salt else None,
+                    'password_hash': base64.b64encode(password_hash).decode('utf-8') if password_hash else None,
+                    'verification_salt': base64.b64encode(verification_salt).decode('utf-8') if verification_salt else None,
                     'huffman_info': serialize_huffman_info(info),
                     'dna_sequence_length': len(dna_sequence)
                 }
@@ -387,11 +417,26 @@ def text():
                         flash("Encryption salt not found in metadata. Cannot decrypt.")
                         return redirect(url_for('text'))
                         
+                    encryption_password = request.form.get('encryption_password', '')
                     if not encryption_password:
                         flash('Encryption password is required for decoding')
                         return redirect(url_for('text'))
                         
                     encryption_salt = base64.b64decode(metadata['encryption_salt'])
+                    
+                    # Verify password if hash exists
+                    if 'password_hash' in metadata and 'verification_salt' in metadata:
+                        password_hash = base64.b64decode(metadata['password_hash'])
+                        verification_salt = base64.b64decode(metadata['verification_salt'])
+                        
+                        if not verify_password(encryption_password, password_hash, verification_salt):
+                            flash('Incorrect password. Please check your password and try again.', 'error')
+                            return render_template('text.html', 
+                                             dna_text=dna_sequence, 
+                                             metadata_text=metadata_json,
+                                             config=config,
+                                             password_error=True,
+                                             show_password_info=config['use_encryption'])
                 
                 huffman_info = deserialize_huffman_info(metadata['huffman_info'])
                 
@@ -412,13 +457,29 @@ def text():
                 # Step 2: Decryption (optional) - reverse
                 if config['use_encryption']:
                     try:
-                        retrieved_data = decrypt_data_with_password(
-                            retrieved_data, encryption_password, encryption_salt, original_encoded_length)
+                        # Use appropriate decryption method based on whether we have password hash
+                        if 'password_hash' in metadata and 'verification_salt' in metadata:
+                            password_hash = base64.b64decode(metadata['password_hash'])
+                            verification_salt = base64.b64decode(metadata['verification_salt'])
+                            retrieved_data = decrypt_data_with_password(
+                                retrieved_data, encryption_password, encryption_salt, 
+                                password_hash, verification_salt, original_encoded_length)
+                        else:
+                            # For backward compatibility with older files
+                            key, iv, _ = derive_key_iv_from_password(encryption_password, encryption_salt)
+                            key_iv_tuple = (key, iv)
+                            retrieved_data = decrypt_data(retrieved_data, key_iv_tuple, original_encoded_length)
+                            
                         # Ensure output is the right length
                         retrieved_data = retrieved_data[:original_encoded_length]
                     except Exception as e:
-                        flash(f'Decryption failed, possibly due to an incorrect password: {str(e)}')
-                        return redirect(url_for('text'))
+                        flash('Decryption failed. The password appears to be incorrect.', 'error')
+                        return render_template('text.html', 
+                                          dna_text=dna_sequence, 
+                                          metadata_text=metadata_json,
+                                          config=config,
+                                          password_error=True,
+                                          show_password_info=config['use_encryption'])
                 
                 # Step 3: Decompression (optional) - reverse
                 if config['use_compression']:

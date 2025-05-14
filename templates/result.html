@@ -13,10 +13,17 @@
         }
         .file-card {
             transition: transform 0.2s;
+            height: 100%;
         }
         .file-card:hover {
             transform: translateY(-3px);
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .file-item {
+            transition: background-color 0.2s;
+        }
+        .file-item:hover {
+            background-color: rgba(0,0,0,0.03);
         }
     </style>
 </head>
@@ -46,21 +53,26 @@
                 <h3 class="mb-0">Processing Results</h3>
             </div>
             <div class="card-body">
-                <p class="lead">Your files have been processed successfully. You can download the results below.</p>
+                <div class="alert alert-success">
+                    <i class="bi bi-check-circle-fill"></i> 
+                    <strong>Success!</strong> Your files have been processed successfully. You can download the results below.
+                </div>
                 
-                <div class="row mt-4">
+                <div class="row row-cols-1 row-cols-md-2 g-4 mt-3">
                     {% if file_info.decoded %}
-                    <div class="col-md-6 mb-4">
+                    <div class="col">
                         <div class="card h-100 file-card border-success">
                             <div class="card-header bg-success text-white">
-                                <h5 class="mb-0">Decoded Files</h5>
+                                <h5 class="mb-0"><i class="bi bi-file-earmark-check"></i> Decoded Files</h5>
                             </div>
                             <div class="card-body">
                                 <ul class="list-group">
                                 {% for file in file_info.decoded %}
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        {{ file }}
-                                        <a href="{{ url_for('download', process_id=process_id, filename=file) }}" class="btn btn-sm btn-success">Download</a>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center file-item">
+                                        <span><i class="bi bi-file-earmark"></i> {{ file }}</span>
+                                        <a href="{{ url_for('download', process_id=process_id, filename=file) }}" class="btn btn-sm btn-success">
+                                            <i class="bi bi-download"></i> Download
+                                        </a>
                                     </li>
                                 {% endfor %}
                                 </ul>
@@ -70,17 +82,19 @@
                     {% endif %}
                     
                     {% if file_info.dna %}
-                    <div class="col-md-6 mb-4">
+                    <div class="col">
                         <div class="card h-100 file-card border-primary">
                             <div class="card-header bg-primary text-white">
-                                <h5 class="mb-0">DNA Sequence Files</h5>
+                                <h5 class="mb-0"><i class="bi bi-filetype-txt"></i> DNA Sequence Files</h5>
                             </div>
                             <div class="card-body">
                                 <ul class="list-group">
                                 {% for file in file_info.dna %}
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        {{ file }}
-                                        <a href="{{ url_for('download', process_id=process_id, filename=file) }}" class="btn btn-sm btn-primary">Download</a>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center file-item">
+                                        <span><i class="bi bi-filetype-dna"></i> {{ file }}</span>
+                                        <a href="{{ url_for('download', process_id=process_id, filename=file) }}" class="btn btn-sm btn-primary">
+                                            <i class="bi bi-download"></i> Download
+                                        </a>
                                     </li>
                                 {% endfor %}
                                 </ul>
@@ -90,17 +104,19 @@
                     {% endif %}
                     
                     {% if file_info.metadata %}
-                    <div class="col-md-6 mb-4">
+                    <div class="col">
                         <div class="card h-100 file-card border-warning">
                             <div class="card-header bg-warning text-dark">
-                                <h5 class="mb-0">Metadata Files</h5>
+                                <h5 class="mb-0"><i class="bi bi-filetype-json"></i> Metadata Files</h5>
                             </div>
                             <div class="card-body">
                                 <ul class="list-group">
                                 {% for file in file_info.metadata %}
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        {{ file }}
-                                        <a href="{{ url_for('download', process_id=process_id, filename=file) }}" class="btn btn-sm btn-warning">Download</a>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center file-item">
+                                        <span><i class="bi bi-filetype-json"></i> {{ file }}</span>
+                                        <a href="{{ url_for('download', process_id=process_id, filename=file) }}" class="btn btn-sm btn-warning">
+                                            <i class="bi bi-download"></i> Download
+                                        </a>
                                     </li>
                                 {% endfor %}
                                 </ul>
@@ -110,17 +126,19 @@
                     {% endif %}
                     
                     {% if file_info.original %}
-                    <div class="col-md-6 mb-4">
+                    <div class="col">
                         <div class="card h-100 file-card border-secondary">
                             <div class="card-header bg-secondary text-white">
-                                <h5 class="mb-0">Original Files</h5>
+                                <h5 class="mb-0"><i class="bi bi-file-earmark"></i> Original Files</h5>
                             </div>
                             <div class="card-body">
                                 <ul class="list-group">
                                 {% for file in file_info.original %}
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        {{ file }}
-                                        <a href="{{ url_for('download', process_id=process_id, filename=file) }}" class="btn btn-sm btn-secondary">Download</a>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center file-item">
+                                        <span><i class="bi bi-file-earmark"></i> {{ file }}</span>
+                                        <a href="{{ url_for('download', process_id=process_id, filename=file) }}" class="btn btn-sm btn-secondary">
+                                            <i class="bi bi-download"></i> Download
+                                        </a>
                                     </li>
                                 {% endfor %}
                                 </ul>
@@ -130,27 +148,35 @@
                     {% endif %}
                 </div>
                 
-                <div class="alert alert-info mt-3">
-                    <h5>Important!</h5>
+                <div class="alert alert-info mt-4">
+                    <h5><i class="bi bi-info-circle"></i> Important!</h5>
                     <p>Make sure to save the following files to be able to decode your data later:</p>
                     <ul>
-                        <li>DNA sequence file (.dna)</li>
-                        <li>Metadata file (_metadata.json)</li>
+                        <li><strong>DNA sequence file (.dna)</strong>: Contains the actual DNA sequence</li>
+                        <li><strong>Metadata file (_metadata.json)</strong>: Contains information needed for decoding</li>
                     </ul>
                     {% if 'use_encryption' in file_info and file_info.use_encryption %}
-                    <p class="text-danger"><strong>Don't forget your encryption password!</strong> Without it, your data cannot be recovered.</p>
+                    <div class="alert alert-danger">
+                        <strong><i class="bi bi-exclamation-triangle"></i> Password Required!</strong> You have used encryption. Make sure to remember your password as it cannot be recovered!
+                    </div>
                     {% endif %}
                 </div>
                 
                 <div class="d-grid gap-2 d-md-flex justify-content-md-center mt-4">
-                    <button type="button" class="btn btn-primary me-md-2" onclick="window.location.href='{{ url_for('index') }}'">Return to Home</button>
-                    <button type="button" class="btn btn-danger" id="clean-files">Clear Files</button>
+                    <button type="button" class="btn btn-primary me-md-2" onclick="window.location.href='{{ url_for('index') }}'">
+                        <i class="bi bi-house"></i> Return to Home
+                    </button>
+                    <button type="button" class="btn btn-danger" id="clean-files">
+                        <i class="bi bi-trash"></i> Clear Files
+                    </button>
                 </div>
             </div>
         </div>
     </div>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Add Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <script>
         document.getElementById('clean-files').addEventListener('click', function() {
             if (confirm('Are you sure you want to delete all files from this process? This cannot be undone.')) {

@@ -60,6 +60,52 @@ def derive_key_iv_from_password(password, salt=None):
     
     return key, iv, salt
 
+def generate_password_hash(password, salt=None):
+    """Generate a hash for password verification."""
+    if salt is None:
+        salt = os.urandom(16)
+        
+    # Convert password string to bytes if it's not already
+    if isinstance(password, str):
+        password = password.encode('utf-8')
+        
+    # Use a different salt for the verification hash
+    verification_salt = hashlib.sha256(salt).digest()[:16]
+    
+    # Create a hash using PBKDF2
+    kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=verification_salt,
+        iterations=10000,
+        backend=default_backend()
+    )
+    
+    password_hash = kdf.derive(password)
+    return password_hash, verification_salt
+
+def verify_password(password, stored_hash, verification_salt):
+    """Verify password against stored hash."""
+    # Convert password string to bytes if it's not already
+    if isinstance(password, str):
+        password = password.encode('utf-8')
+        
+    # Create a hash using PBKDF2
+    kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=verification_salt,
+        iterations=10000,
+        backend=default_backend()
+    )
+    
+    try:
+        # This will raise an exception if verification fails
+        kdf.verify(password, stored_hash)
+        return True
+    except Exception:
+        return False
+
 def encrypt_data(data, key_iv_tuple):
     """Encrypt data using AES-CBC with the given key and IV."""
     key, iv = key_iv_tuple
@@ -81,11 +127,14 @@ def encrypt_data_with_password(data, password):
     # Derive key and IV from password
     key, iv, salt = derive_key_iv_from_password(password)
     
+    # Generate verification hash for later password validation
+    password_hash, verification_salt = generate_password_hash(password, salt)
+    
     # Use the derived key and IV for encryption
     key_iv_tuple = (key, iv)
     encrypted_data = encrypt_data(data, key_iv_tuple)
     
-    return encrypted_data, salt
+    return encrypted_data, salt, password_hash, verification_salt
 
 def decrypt_data(encrypted_data, key_iv_tuple, original_length):
     """Decrypt data using AES-CBC with the given key and IV."""
@@ -104,14 +153,22 @@ def decrypt_data(encrypted_data, key_iv_tuple, original_length):
     # Ensure we don't exceed the original length
     return bytearray(decrypted_data[:original_length])
 
-def decrypt_data_with_password(encrypted_data, password, salt, original_length):
+def decrypt_data_with_password(encrypted_data, password, salt, password_hash, verification_salt, original_length):
     """Decrypt data using a password and salt."""
-    # Derive the same key and IV using the password and stored salt
-    key, iv, _ = derive_key_iv_from_password(password, salt)
-    
-    # Use the derived key and IV for decryption
-    key_iv_tuple = (key, iv)
-    return decrypt_data(encrypted_data, key_iv_tuple, original_length)
+    # First verify the password
+    if not verify_password(password, password_hash, verification_salt):
+        raise ValueError("Incorrect password. Please check your password and try again.")
+        
+    try:
+        # Derive the same key and IV using the password and stored salt
+        key, iv, _ = derive_key_iv_from_password(password, salt)
+        
+        # Use the derived key and IV for decryption
+        key_iv_tuple = (key, iv)
+        return decrypt_data(encrypted_data, key_iv_tuple, original_length)
+    except Exception as e:
+        # Add more specific error for password failures
+        raise ValueError("Decryption failed. The password appears to be incorrect.") from e
 
 def pad_data(data):
     """PKCS#7 padding for AES block size (16 bytes)."""
@@ -194,6 +251,15 @@ def deserialize_huffman_info(serialized_info):
         return None
     return pickle.loads(base64.b64decode(serialized_info.encode('utf-8')))
 
+# Add a compatibility wrapper for code that might still expect the old generate_key function
+def generate_key(data_length=None):
+    """
+    Compatibility wrapper for the old generate_key function.
+    Returns just a key (without IV) for backward compatibility.
+    """
+    key = urandom(32)  # Generate a fixed-size 256-bit key
+    return key
+
 def main():
     # Initialize mappings
     nucleotides, inverse_nucleotides = initialize_nucleotides()
@@ -227,11 +293,13 @@ def main():
         
         # Step 2: Encryption (optional)
         encryption_salt = None
+        password_hash = None
+        verification_salt = None
         if CONFIG['use_encryption']:
             # Get password from user
             import getpass
             password = getpass.getpass("Enter encryption password: ")
-            processed_data, encryption_salt = encrypt_data_with_password(processed_data, password)
+            processed_data, encryption_salt, password_hash, verification_salt = encrypt_data_with_password(processed_data, password)
             print(f"Data encrypted with password-derived key")
         else:
             print("Encryption disabled")
@@ -255,6 +323,8 @@ def main():
             'original_size': len(data),
             'processed_size': original_encoded_length,
             'encryption_salt': base64.b64encode(encryption_salt).decode('utf-8') if encryption_salt else None,
+            'password_hash': base64.b64encode(password_hash).decode('utf-8') if password_hash else None,
+            'verification_salt': base64.b64encode(verification_salt).decode('utf-8') if verification_salt else None,
             'huffman_info': serialize_huffman_info(info),
             'dna_sequence_length': len(dna_sequence)
         }
@@ -320,14 +390,37 @@ def main():
             import getpass
             password = getpass.getpass("Enter decryption password: ")
             encryption_salt = base64.b64decode(metadata['encryption_salt'])
+            password_hash = base64.b64decode(metadata['password_hash']) if 'password_hash' in metadata else None
+            verification_salt = base64.b64decode(metadata['verification_salt']) if 'verification_salt' in metadata else None
+            
+            # If we have password hash, verify first before proceeding
+            if password_hash and verification_salt:
+                if not verify_password(password, password_hash, verification_salt):
+                    print("Error: Incorrect password.")
+                    return
         
         # Step 2: Decryption (optional) - reverse
         if config['use_encryption']:
             try:
-                retrieved_data = decrypt_data_with_password(
-                    retrieved_data, password, encryption_salt, original_encoded_length)
+                # Use the new decrypt function that handles password hash verification
+                if 'password_hash' in metadata and 'verification_salt' in metadata:
+                    password_hash = base64.b64decode(metadata['password_hash'])
+                    verification_salt = base64.b64decode(metadata['verification_salt'])
+                    retrieved_data = decrypt_data_with_password(
+                        retrieved_data, password, encryption_salt, 
+                        password_hash, verification_salt, original_encoded_length)
+                else:
+                    # For backward compatibility with older files
+                    key, iv, _ = derive_key_iv_from_password(password, encryption_salt)
+                    key_iv_tuple = (key, iv)
+                    retrieved_data = decrypt_data(retrieved_data, key_iv_tuple, original_encoded_length)
+                
                 # Ensure output is the right length
                 retrieved_data = retrieved_data[:original_encoded_length]
+            except ValueError as e:
+                print(f"Decryption failed: {e}")
+                print("This may be due to an incorrect password.")
+                return
             except Exception as e:
                 print(f"Decryption failed: {e}")
                 print("This may be due to an incorrect password.")

@@ -5,11 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Decode DNA - DNA Storage System</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <style>
         body {
             padding-top: 2rem;
             padding-bottom: 2rem;
             background-color: #f8f9fa;
+        }
+        .form-section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            background-color: #ffffff;
+            box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+        }
+        .form-section h5 {
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #e9ecef;
         }
     </style>
 </head>
@@ -27,11 +40,16 @@
                 <h3 class="mb-0">Decode DNA to File</h3>
             </div>
             <div class="card-body">
-                {% with messages = get_flashed_messages() %}
+                {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
-                <div class="alert alert-info" role="alert">
+                <div class="alert {% if messages[0][0] == 'error' %}alert-danger{% else %}alert-info{% endif %}" role="alert">
+                    {% if messages[0][0] == 'error' %}
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    {% else %}
+                    <i class="bi bi-info-circle-fill me-2"></i>
+                    {% endif %}
                     <ul class="mb-0">
-                    {% for message in messages %}
+                    {% for category, message in messages %}
                         <li>{{ message }}</li>
                     {% endfor %}
                     </ul>
@@ -40,34 +58,44 @@
                 {% endwith %}
                 
                 <form method="POST" enctype="multipart/form-data">
-                    <div class="mb-3">
-                        <label for="dna_file" class="form-label">Select DNA Sequence File</label>
-                        <input type="file" class="form-control" id="dna_file" name="dna_file" required>
-                        <div class="form-text">Upload the .dna file containing the nucleotide sequence</div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="metadata_file" class="form-label">Select Metadata File</label>
-                        <input type="file" class="form-control" id="metadata_file" name="metadata_file" required>
-                        <div class="form-text">Upload the _metadata.json file containing encoding information</div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="key_file" class="form-label">Select Encryption Key File (if applicable)</label>
-                        <input type="file" class="form-control" id="key_file" name="key_file">
-                        <div class="form-text">Upload the _key.txt file containing the encryption key (required if the data is encrypted)</div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="encryption_key" class="form-label">Or Enter Encryption Key Directly</label>
-                        <input type="text" class="form-control" id="encryption_key" name="encryption_key" placeholder="Enter hexadecimal key...">
-                        <div class="form-text">You can paste the encryption key here instead of uploading a file</div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="encryption_password" class="form-label">Enter Encryption Password (if applicable)</label>
-                        <input type="password" class="form-control" id="encryption_password" name="encryption_password" placeholder="Enter decryption password...">
-                        <div class="form-text">If the data was encrypted, enter the same password used during encoding</div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-section">
+                                <h5>Required Files</h5>
+                                
+                                <div class="mb-3">
+                                    <label for="dna_file" class="form-label">DNA Sequence File</label>
+                                    <input type="file" class="form-control" id="dna_file" name="dna_file" required>
+                                    <div class="form-text">Upload the .dna file containing the nucleotide sequence</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="metadata_file" class="form-label">Metadata File</label>
+                                    <input type="file" class="form-control" id="metadata_file" name="metadata_file" required>
+                                    <div class="form-text">Upload the _metadata.json file containing encoding information</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-section">
+                                <h5>Encryption (if applicable)</h5>
+                                
+                                <div class="mb-3">
+                                    <label for="encryption_password" class="form-label">Encryption Password</label>
+                                    <div class="input-group has-validation">
+                                        <input type="password" class="form-control" id="encryption_password" name="encryption_password" placeholder="Enter decryption password...">
+                                        <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                        <div class="invalid-feedback" style="{% if 'error' in get_flashed_messages(category_filter=['error']) %}display:block;{% endif %}">
+                                            Incorrect password. Please try again.
+                                        </div>
+                                    </div>
+                                    <div class="form-text">If the data was encrypted, enter the same password used during encoding</div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     
                     <div class="alert alert-warning" role="alert">
@@ -75,9 +103,9 @@
                         <p>Both the DNA sequence file and the metadata file are required for successful decoding. If the data is encrypted, you also need to provide the correct password.</p>
                     </div>
                     
-                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-center">
                         <button type="button" class="btn btn-secondary me-md-2" onclick="window.location.href='{{ url_for('index') }}'">Cancel</button>
-                        <button type="submit" class="btn btn-success">Decode DNA</button>
+                        <button type="submit" class="btn btn-success btn-lg">Decode DNA</button>
                     </div>
                 </form>
             </div>
@@ -85,5 +113,31 @@
     </div>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Toggle password visibility
+        document.getElementById('togglePassword').addEventListener('click', function() {
+            const passwordInput = document.getElementById('encryption_password');
+            const icon = this.querySelector('i');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                icon.classList.remove('bi-eye');
+                icon.classList.add('bi-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                icon.classList.remove('bi-eye-slash');
+                icon.classList.add('bi-eye');
+            }
+        });
+        
+        // Highlight password field if error was flashed
+        document.addEventListener('DOMContentLoaded', function() {
+            {% with errors = get_flashed_messages(category_filter=['error']) %}
+            {% if errors %}
+                document.getElementById('encryption_password').classList.add('is-invalid');
+            {% endif %}
+            {% endwith %}
+        });
+    </script>
 </body>
 </html>
